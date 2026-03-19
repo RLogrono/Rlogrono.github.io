@@ -45,6 +45,15 @@ body {
     z-index: 2000;
     box-shadow: 0 4px 20px rgba(255, 107, 53, 0.3);
     animation: slideDown 0.5s ease-out;
+    max-height: 100px;
+    overflow: hidden;
+    transition: max-height 0.5s ease-out, opacity 0.5s ease-out;
+}
+
+.warning-banner.closed {
+    max-height: 0;
+    opacity: 0;
+    box-shadow: none;
 }
 
 @keyframes slideDown {

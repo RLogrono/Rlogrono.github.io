@@ -4,10 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (closeWarningBtn) {
         closeWarningBtn.addEventListener('click', function() {
             const banner = document.querySelector('.warning-banner');
-            banner.style.animation = 'slideUp 0.5s ease-out forwards';
-            setTimeout(() => {
-                banner.style.display = 'none';
-            }, 500);
+            banner.classList.add('closed');
         });
     }
 });
