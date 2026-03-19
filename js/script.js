@@ -5,6 +5,8 @@ document.addEventListener('DOMContentLoaded', () => {
         closeWarningBtn.addEventListener('click', function() {
             const banner = document.querySelector('.warning-banner');
             banner.classList.add('closed');
+            // Cambiar posición de la navbar cuando se cierre el aviso
+            document.documentElement.style.setProperty('--navbar-offset', '0px');
         });
     }
 });
