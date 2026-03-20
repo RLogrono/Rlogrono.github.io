@@ -1,13 +1,34 @@
 // ===== CIERRE ANIMADO DEL WARNING BANNER =====
 document.addEventListener('DOMContentLoaded', () => {
-    const closeWarningBtn = document.querySelector('.close-warning');
-    if (closeWarningBtn) {
-        closeWarningBtn.addEventListener('click', function() {
-            const banner = document.querySelector('.warning-banner');
-            banner.classList.add('closed');
-            // Cambiar posición de la navbar cuando se cierre el aviso
-            document.documentElement.style.setProperty('--navbar-offset', '0px');
-        });
+    try {
+        const closeWarningBtn = document.querySelector('.close-warning');
+        const banner = document.querySelector('.warning-banner');
+        
+        if (closeWarningBtn && banner) {
+            closeWarningBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Método 1: Usar CSS variables
+                try {
+                    document.documentElement.style.setProperty('--navbar-offset', '0px');
+                } catch (err) {
+                    console.warn('CSS Variable setProperty falló:', err);
+                }
+                
+                // Método 2: Modificar style directo como fallback
+                const navbar = document.querySelector('.navbar');
+                if (navbar) {
+                    navbar.style.top = '0px';
+                }
+                
+                // Añadir clase de cierre
+                banner.classList.add('closed');
+                
+                console.log('✓ Banner cerrado correctamente');
+            });
+        }
+    } catch (err) {
+        console.error('Error en setup del banner:', err);
     }
 });
 
@@ -205,3 +226,49 @@ window.addEventListener('DOMContentLoaded', () => {
         quoteCard.style.animation = 'fadeInScale 0.8s ease-out 0.3s both';
     }
 });
+
+// ===== DIAGNÓSTICO EN CONSOLA (SOLO PARA DEBUG) =====
+console.log('%c🚀 Web Portafolio Cargada', 'color: #6366f1; font-size: 16px; font-weight: bold;');
+console.log('%cVerificación de elementos:', 'color: #764ba2; font-weight: bold;');
+
+try {
+    // Verificar elementos críticos
+    const elements = {
+        'Banner': document.querySelector('.warning-banner'),
+        'Navbar': document.querySelector('.navbar'),
+        'Hero': document.querySelector('.hero'),
+        'Botón Cerrar': document.querySelector('.close-warning'),
+        'Foto Perfil': document.querySelector('.profile-image')
+    };
+    
+    Object.entries(elements).forEach(([name, el]) => {
+        if (el) {
+            console.log(`%c✓ ${name}`, 'color: #22c55e;');
+        } else {
+            console.warn(`%c✗ ${name} NO ENCONTRADO`, 'color: #ef4444;');
+        }
+    });
+    
+    // Verificar variables CSS
+    console.log('%nVariables CSS:', 'color: #764ba2; font-weight: bold;');
+    const cssVars = ['--navbar-offset', '--primary-color', '--secondary-color'];
+    const root = getComputedStyle(document.documentElement);
+    
+    cssVars.forEach(varName => {
+        const value = root.getPropertyValue(varName);
+        if (value) {
+            console.log(`✓ ${varName}: ${value}`);
+        }
+    });
+    
+    // Evento click en botón
+    const closeBtn = document.querySelector('.close-warning');
+    if (closeBtn) {
+        console.log('%nDetector de Click Configurado', 'color: #6366f1;');
+    }
+    
+    console.log('%cℹ️ Si ves errores en rojo, cópielos y envíalos', 'color: #f59e0b;');
+    
+} catch (err) {
+    console.error('Error en diagnóstico:', err);
+}
