@@ -28,7 +28,7 @@
 const C = Object.freeze({
   gravity: 1750, bounce: 1010, accel: 3400, maxSpeed: 560, friction: 430,
   ballRadius: 14, platformHeight: 13, minWidthRatio: .16, maxWidthRatio: .57,
-  minWidthBallDiameters: 2.8, minGapRatio: .25, maxGapRatio: .89,
+  minWidthBallDiameters: 2.8, minGapRatio: .25, maxGapRatio: .93,
   maxDifficultyScore: 15000, maxMobileChance: .27, mobileSpeed: .72,
   mobileAmpMin: .05, mobileAmpMax: .10, prepSeconds: 1, maxParticles: 42,
   leaderboardKey: "verticalBouncerLeaderboardV1"
@@ -64,10 +64,12 @@ document.addEventListener("visibilitychange",()=>{last=performance.now()});
 const smoothstep=t=>t*t*(3-2*t);
 /* Comienza aproximadamente en el reto que antes se alcanzaba a 6.000 puntos
    y recorre el resto de la curva tres veces más rápido. */
-const difficulty=()=>smoothstep(Math.min(1,(6000+score*3)/C.maxDifficultyScore));
+const difficulty=()=>smoothstep(Math.min(1,(6000+score*2.4)/C.maxDifficultyScore));
 const jumpHeight=()=>C.bounce*C.bounce/(2*C.gravity);
 function makePlatform(x,y,w,mobile=false){
- const safe=Math.max(w/2+2,Math.min(W-w/2-2,x));const amp=mobile?Math.min(W*C.mobileAmpMax,Math.max(W*C.mobileAmpMin,W*.05)):0;
+ const safe=Math.max(w/2+2,Math.min(W-w/2-2,x));
+ /* Las móviles empiezan con un recorrido discreto y se abren con el reto. */
+ const amp=mobile?Math.min(W*C.mobileAmpMax,Math.max(W*C.mobileAmpMin,W*(.035+.075*difficulty()))):0;
  return {x:safe,baseX:safe,y,w,h:C.platformHeight,mobile,amp,phase:Math.random()*Math.PI*2};
 }
 function resetWorld(){
@@ -87,7 +89,9 @@ function ensurePlatforms(){
   const minW=Math.max(C.ballRadius*2*C.minWidthBallDiameters,W*C.minWidthRatio);
   const width=Math.max(minW,W*(C.maxWidthRatio+(C.minWidthRatio-C.maxWidthRatio)*d)*(0.90+Math.random()*.14));
   const descentTime=(C.bounce+Math.sqrt(Math.max(0,C.bounce*C.bounce-2*C.gravity*gap)))/C.gravity;
-  const reach=Math.min(W*.43,C.maxSpeed*descentTime*.77+55);
+  /* A mayor dificultad pueden aparecer más alejadas en horizontal, sin
+     superar un alcance conservador calculado desde el tiempo de vuelo. */
+  const reach=Math.min(W*(.28+.19*d),C.maxSpeed*descentTime*(.58+.19*d)+40);
   const edge=width/2+4, low=edge,high=W-edge;
   let target=prev.baseX+(Math.random()*2-1)*reach;
   target=Math.max(low,Math.min(high,target));
