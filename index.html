@@ -1,155 +1,142 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Portafolio Personal</title>
-    <link rel="stylesheet" href="css/styles.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Salto Vertical</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body{margin:0;width:100%;height:100%;overflow:hidden;overscroll-behavior:none;background:#081126;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;user-select:none;-webkit-user-select:none}body{display:grid;place-items:center;background:radial-gradient(circle at 50% 15%,#273c75 0,#101a38 42%,#070b18 100%)}#gameShell{position:relative;width:min(100vw,520px);height:100dvh;max-height:920px;overflow:hidden;background:#101b3f;touch-action:none;isolation:isolate;box-shadow:0 0 50px #0008}canvas{display:block;width:100%;height:100%;touch-action:none}.hud{position:absolute;inset:0;pointer-events:none;padding:calc(14px + env(safe-area-inset-top)) calc(15px + env(safe-area-inset-right)) 14px calc(15px + env(safe-area-inset-left));display:flex;justify-content:space-between;align-items:flex-start;font-weight:800;text-shadow:0 2px 3px #0008}.metric{font-size:12px;letter-spacing:.08em;color:#c9d7ff;text-transform:uppercase}.metric b{display:block;font-size:26px;line-height:1.05;letter-spacing:0;color:#fff}.direction{position:absolute;bottom:calc(18px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);font-size:12px;color:#dce8ff;letter-spacing:.12em;opacity:.42;transition:opacity .15s}.direction.active{opacity:1;color:#fff}.prep{position:absolute;top:34%;left:50%;transform:translate(-50%,-50%);width:min(88%,360px);text-align:center;pointer-events:none;transition:opacity .2s}.prep strong{display:block;font-size:clamp(29px,8vw,42px);letter-spacing:-.04em;text-shadow:0 4px 14px #0009}.prep span{display:block;margin-top:10px;color:#d7e3ff;font-size:14px}.hidden{opacity:0;visibility:hidden}.overlay{position:absolute;inset:0;display:grid;place-items:center;padding:20px;background:#0710279c;backdrop-filter:blur(5px);z-index:4}.panel{width:min(100%,390px);max-height:90%;overflow:auto;border:1px solid #ffffff2b;border-radius:22px;padding:24px;background:linear-gradient(145deg,#1d2d60,#111a38);box-shadow:0 18px 50px #0008;text-align:center}.panel h1{margin:0;font-size:30px;letter-spacing:-.04em}.summary{display:flex;gap:9px;margin:18px 0}.summary div{flex:1;padding:12px 7px;border-radius:13px;background:#ffffff12;color:#bccbef;font-size:11px;text-transform:uppercase;letter-spacing:.07em}.summary b{display:block;color:white;font-size:23px;margin-top:3px;letter-spacing:0}.table-title{font-size:12px;color:#d4e0ff;text-align:left;text-transform:uppercase;letter-spacing:.1em;margin:15px 0 7px}.scores{margin:0;padding:0;list-style:none;text-align:left;border-radius:12px;overflow:hidden;background:#07112b77}.scores li{display:grid;grid-template-columns:34px 1fr 100px;padding:8px 11px;font-size:13px;border-bottom:1px solid #ffffff13}.scores li:last-child{border:0}.scores .empty{display:block;text-align:center;color:#9eadd1}.scores span:last-child{text-align:right;color:#b9c9ef}.actions{display:grid;gap:10px;margin-top:19px}button{min-height:48px;border:0;border-radius:13px;font:800 16px system-ui;cursor:pointer;touch-action:manipulation}button.primary{background:linear-gradient(135deg,#77e5ff,#5d8cff);color:#07122c;box-shadow:0 5px 16px #3e7cff5e}button.secondary{background:#ffffff12;color:#edf3ff;border:1px solid #ffffff2b}button:active{transform:translateY(1px)}@media(max-width:520px){#gameShell{width:100vw;height:100dvh;max-height:none}.panel{padding:21px 17px;border-radius:20px}.scores li{grid-template-columns:30px 1fr 90px}}@media(min-width:521px){#gameShell{border-radius:24px}.overlay{border-radius:24px}}
+</style>
 </head>
 <body>
-    <!-- POC Warning Banner -->
-    <div class="warning-banner">
-        <div class="warning-content">
-            <span class="warning-icon">⚠️</span>
-            <span class="warning-text"><strong>AVISO:</strong> Este contenido es una POC (Proof of Concept). La información mostrada no es real y solo sirve como demostración.</span>
-            <button class="close-warning">✕</button>
-        </div>
-    </div>
+<main id="gameShell" aria-label="Juego Salto Vertical">
+<canvas id="game"></canvas>
+<div class="hud"><div class="metric">Puntos<b id="score">0</b></div><div class="metric" style="text-align:right">Récord<b id="record">0</b></div></div>
+<div id="direction" class="direction">↔ MUEVE LA PELOTA</div>
+<div id="prep" class="prep"><strong>Prepárate</strong><span>← →, A / D o toca un lado</span></div>
+<div id="overlay" class="overlay hidden" aria-live="polite">
+ <section class="panel"><h1>Fin de la partida</h1>
+  <div class="summary"><div>Puntuación<b id="finalScore">0</b></div><div>Récord<b id="finalRecord">0</b></div><div>Intentos<b id="attempts">0</b></div></div>
+  <div class="table-title">Clasificación local</div><ol id="scores" class="scores"></ol>
+  <div class="actions"><button id="retry" class="primary" type="button">Reintentar</button><button id="clear" class="secondary" type="button">Borrar clasificación</button></div>
+ </section>
+</div>
+</main>
+<script>
+"use strict";
+/* Configuración centralizada: unidades lógicas CSS por segundo. */
+const C = Object.freeze({
+  gravity: 1750, bounce: 1010, accel: 3400, maxSpeed: 560, friction: 430,
+  ballRadius: 14, platformHeight: 13, minWidthRatio: .16, maxWidthRatio: .57,
+  minWidthBallDiameters: 2.8, minGapRatio: .25, maxGapRatio: .89,
+  maxDifficultyScore: 15000, maxMobileChance: .27, mobileSpeed: .72,
+  mobileAmpMin: .05, mobileAmpMax: .10, prepSeconds: 1, maxParticles: 42,
+  leaderboardKey: "verticalBouncerLeaderboardV1"
+});
+const shell = document.getElementById("gameShell"), canvas = document.getElementById("game"), ctx = canvas.getContext("2d");
+const ui = {score:document.getElementById("score"),record:document.getElementById("record"),direction:document.getElementById("direction"),prep:document.getElementById("prep"),overlay:document.getElementById("overlay"),finalScore:document.getElementById("finalScore"),finalRecord:document.getElementById("finalRecord"),attempts:document.getElementById("attempts"),scores:document.getElementById("scores"),retry:document.getElementById("retry"),clear:document.getElementById("clear")};
+let W=360,H=640,dpr=1,last=0,raf=0,state="prep",prepElapsed=0,cameraY=0,highestY=0,score=0,platforms=[],particles=[],ball,input={left:false,right:false,pointerId:null},data,attemptSaved=false;
 
-    <!-- Navigation -->
-    <nav class="navbar">
-        <div class="container">
-            <div class="nav-brand">RL</div>
-            <ul class="nav-links">
-                <li><a href="#about">Sobre mí</a></li>
-                <li><a href="#projects">Proyectos</a></li>
-                <li><a href="#contact">Contacto</a></li>
-            </ul>
-        </div>
-    </nav>
+/* Persistencia con alternativa segura en memoria. */
+function loadData(){try{const v=JSON.parse(localStorage.getItem(C.leaderboardKey));if(v&&Array.isArray(v.scores))return {attempts:+v.attempts||0,best:+v.best||0,scores:v.scores.slice(0,10)};}catch(e){}return {attempts:0,best:0,scores:[]};}
+function saveData(){try{localStorage.setItem(C.leaderboardKey,JSON.stringify(data));}catch(e){}}
+data=loadData();
 
-    <!-- Hero Section -->
-    <section class="hero">
-        <div class="container">
-            <div class="hero-content">
-                <div class="profile-image-container">
-                    <img src="bornco.jpg" alt="Foto de perfil" class="profile-image">
-                </div>
-                <h1 class="hero-title">Bienvenido a mi mundo</h1>
-                <p class="hero-subtitle">Desarrollador apasionado creando experiencias digitales increíbles</p>
-            </div>
-        </div>
-    </section>
+function resize(){
+ const r=shell.getBoundingClientRect(); W=Math.max(240,r.width);H=Math.max(360,r.height);dpr=Math.min(2,window.devicePixelRatio||1);
+ canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);
+ if(ball){ball.x=Math.max(ball.r,Math.min(W-ball.r,ball.x)); for(const p of platforms){p.baseX=Math.max(p.w/2,Math.min(W-p.w/2,p.baseX));p.x=p.baseX+p.amp*Math.sin(p.phase);}}
+}
+window.addEventListener("resize",resize,{passive:true});
 
-    <!-- Scroll Down Indicator -->
-    <div class="scroll-indicator">
-        <div class="mouse">
-            <div class="wheel"></div>
-        </div>
-        <div class="arrow">↓</div>
-    </div>
+/* Entrada unificada: teclado, ratón y Pointer Events. */
+function directionFromEvent(e){const r=shell.getBoundingClientRect();return e.clientX-r.left<r.width/2?-1:1;}
+function setPointerDirection(e){const d=directionFromEvent(e);input.left=d<0;input.right=d>0;ui.direction.textContent=d<0?"← IZQUIERDA":"DERECHA →";ui.direction.classList.add("active");}
+shell.addEventListener("pointerdown",e=>{if(e.target.closest("button"))return;e.preventDefault();input.pointerId=e.pointerId;shell.setPointerCapture?.(e.pointerId);setPointerDirection(e)},{passive:false});
+shell.addEventListener("pointermove",e=>{if(e.pointerId===input.pointerId)setPointerDirection(e)},{passive:false});
+function releasePointer(e){if(e.pointerId!==input.pointerId)return;input.pointerId=null;input.left=input.right=false;ui.direction.textContent="↔ MUEVE LA PELOTA";ui.direction.classList.remove("active");}
+shell.addEventListener("pointerup",releasePointer);shell.addEventListener("pointercancel",releasePointer);shell.addEventListener("contextmenu",e=>e.preventDefault());
+window.addEventListener("keydown",e=>{if(["ArrowLeft","ArrowRight","a","A","d","D"].includes(e.key))e.preventDefault();if(e.key==="ArrowLeft"||e.key==="a"||e.key==="A")input.left=true;if(e.key==="ArrowRight"||e.key==="d"||e.key==="D")input.right=true;});
+window.addEventListener("keyup",e=>{if(e.key==="ArrowLeft"||e.key==="a"||e.key==="A")input.left=false;if(e.key==="ArrowRight"||e.key==="d"||e.key==="D")input.right=false;});
+document.addEventListener("visibilitychange",()=>{last=performance.now()});
 
-    <!-- About Section -->
-    <section id="about" class="about">
-        <div class="container">
-            <h2 class="section-title">Sobre Mí</h2>
-            <div class="about-content">
-                <div class="about-text">
-                    <p class="fade-in-left">
-                        Soy un desarrollador apasionado por crear soluciones innovadoras y diseños
-                        que no solo se ven bien, sino que también funcionan perfecto. Con años de 
-                        experiencia en desarrollo web, me encanta enfrentar nuevos retos y aprender
-                        tecnologías emergentes.
-                    </p>
-                    <p class="fade-in-left">
-                        Mi objetivo es transformar ideas en código limpio y elegante que haga una diferencia
-                        real en la vida de las personas. Creo en la importancia de la colaboración, la
-                        creatividad y el aprendizaje continuo.
-                    </p>
-                </div>
-                <div class="skills">
-                    <h3>Habilidades</h3>
-                    <div class="skills-grid">
-                        <div class="skill-tag">JavaScript</div>
-                        <div class="skill-tag">React</div>
-                        <div class="skill-tag">HTML & CSS</div>
-                        <div class="skill-tag">Python</div>
-                        <div class="skill-tag">Git</div>
-                        <div class="skill-tag">Diseño UX/UI</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
+/* Mundo, generación justa y dificultad. */
+const smoothstep=t=>t*t*(3-2*t);
+/* Comienza aproximadamente en el reto que antes se alcanzaba a 6.000 puntos
+   y recorre el resto de la curva tres veces más rápido. */
+const difficulty=()=>smoothstep(Math.min(1,(6000+score*3)/C.maxDifficultyScore));
+const jumpHeight=()=>C.bounce*C.bounce/(2*C.gravity);
+function makePlatform(x,y,w,mobile=false){
+ const safe=Math.max(w/2+2,Math.min(W-w/2-2,x));const amp=mobile?Math.min(W*C.mobileAmpMax,Math.max(W*C.mobileAmpMin,W*.05)):0;
+ return {x:safe,baseX:safe,y,w,h:C.platformHeight,mobile,amp,phase:Math.random()*Math.PI*2};
+}
+function resetWorld(){
+ resize();state="prep";prepElapsed=0;cameraY=0;score=0;highestY=H*.81;attemptSaved=false;particles=[];platforms=[];
+ data.attempts++;saveData();ui.score.textContent="0";ui.record.textContent=data.best;ui.prep.classList.remove("hidden");ui.overlay.classList.add("hidden");
+ const initialW=Math.min(W*.72,Math.max(W*C.maxWidthRatio,C.ballRadius*6));const startY=H*.83;
+ platforms.push(makePlatform(W/2,startY,initialW));
+ ball={x:W/2,y:startY-C.ballRadius,prevY:startY-C.ballRadius,vx:0,vy:0,r:C.ballRadius,squash:0};
+ const gaps=[.34,.37,.40,.42,.45,.47];let py=startY,px=W/2;
+ for(let i=0;i<gaps.length;i++){const gap=jumpHeight()*gaps[i];py-=gap;const width=W*(.49-i*.018);px=Math.max(width/2+8,Math.min(W-width/2-8,px+(Math.random()-.5)*W*.28));platforms.push(makePlatform(px,py,width));}
+ ensurePlatforms();
+}
+function ensurePlatforms(){
+ let top=Math.min(...platforms.map(p=>p.y)), prev=platforms.reduce((a,p)=>p.y< a.y?p:a);
+ while(top>cameraY-H*.70){
+  const d=difficulty(),h=jumpHeight(),gap=h*(C.minGapRatio+(C.maxGapRatio-C.minGapRatio)*d)*(0.91+Math.random()*.12);
+  const minW=Math.max(C.ballRadius*2*C.minWidthBallDiameters,W*C.minWidthRatio);
+  const width=Math.max(minW,W*(C.maxWidthRatio+(C.minWidthRatio-C.maxWidthRatio)*d)*(0.90+Math.random()*.14));
+  const descentTime=(C.bounce+Math.sqrt(Math.max(0,C.bounce*C.bounce-2*C.gravity*gap)))/C.gravity;
+  const reach=Math.min(W*.43,C.maxSpeed*descentTime*.77+55);
+  const edge=width/2+4, low=edge,high=W-edge;
+  let target=prev.baseX+(Math.random()*2-1)*reach;
+  target=Math.max(low,Math.min(high,target));
+  const mobile=Math.random()<C.maxMobileChance*Math.max(0,(d-.23)/.77);
+  top-=gap;const p=makePlatform(target,top,width,mobile);platforms.push(p);prev=p;
+ }
+}
+function updatePlatforms(dt){for(const p of platforms){if(p.mobile)p.x=p.baseX+p.amp*Math.sin(p.phase+(performance.now()/1000)*C.mobileSpeed);}}
+function emitLand(){for(let i=0;i<8&&particles.length<C.maxParticles;i++)particles.push({x:ball.x,y:ball.y+ball.r,vx:(Math.random()-.5)*150,vy:-Math.random()*110,life:.35+Math.random()*.15});}
+function update(dt){
+ if(state==="over")return;
+ if(state==="prep"){prepElapsed+=dt;if(prepElapsed<C.prepSeconds)return;state="playing";ui.prep.classList.add("hidden");ball.vy=-C.bounce;}
+ updatePlatforms(dt);
+ const axis=(input.right?1:0)-(input.left?1:0);
+ if(axis)ball.vx+=axis*C.accel*dt;else ball.vx-=Math.sign(ball.vx)*Math.min(Math.abs(ball.vx),C.friction*dt);
+ ball.vx=Math.max(-C.maxSpeed,Math.min(C.maxSpeed,ball.vx));
+ ball.prevY=ball.y;ball.vy+=C.gravity*dt;ball.y+=ball.vy*dt;ball.x+=ball.vx*dt;
+ /* Los laterales conectan entre sí: la pelota conserva toda su inercia. */
+ if(ball.x+ball.r<0)ball.x=W+ball.r;
+ else if(ball.x-ball.r>W)ball.x=-ball.r;
+ if(ball.vy>0){for(const p of platforms){const oldBottom=ball.prevY+ball.r,newBottom=ball.y+ball.r;if(oldBottom<=p.y&&newBottom>=p.y&&ball.x+ball.r>p.x-p.w/2&&ball.x-ball.r<p.x+p.w/2){ball.y=p.y-ball.r;ball.vy=-C.bounce;ball.squash=1;emitLand();break;}}}
+ highestY=Math.min(highestY,ball.y);const nextScore=Math.max(0,Math.floor((H*.81-highestY)*.8));if(nextScore>score){score=nextScore;ui.score.textContent=score;ensurePlatforms();}
+ const targetCamera=ball.y-H*.40;if(targetCamera<cameraY)cameraY=targetCamera;
+ platforms=platforms.filter(p=>p.y-cameraY<H+90);ensurePlatforms();
+ for(const q of particles){q.x+=q.vx*dt;q.y+=q.vy*dt;q.vy+=430*dt;q.life-=dt;}particles=particles.filter(q=>q.life>0);
+ ball.squash=Math.max(0,ball.squash-dt*5);
+ if(ball.y-ball.r-cameraY>H+38)gameOver();
+}
+function gameOver(){
+ state="over";if(attemptSaved)return;attemptSaved=true;
+ data.best=Math.max(data.best,score);data.scores.push({score,attempt:data.attempts});data.scores.sort((a,b)=>b.score-a.score);data.scores=data.scores.slice(0,10);saveData();
+ ui.finalScore.textContent=score;ui.finalRecord.textContent=data.best;ui.attempts.textContent=data.attempts;renderScores();ui.overlay.classList.remove("hidden");
+}
+function renderScores(){ui.scores.textContent="";if(!data.scores.length){const l=document.createElement("li");l.className="empty";l.textContent="Aún no hay puntuaciones";ui.scores.append(l);return;}data.scores.forEach((s,i)=>{const l=document.createElement("li");l.innerHTML=`<b>#${i+1}</b><span>${s.score} puntos</span><span>Intento ${s.attempt}</span>`;ui.scores.append(l);});}
 
-    <!-- Quote Section -->
-    <section class="quote-section">
-        <div class="container">
-            <div class="quote-card">
-                <p class="quote-text">"El único modo de hacer un trabajo excelente es amar lo que haces."</p>
-                <p class="quote-author">— Steve Jobs</p>
-            </div>
-        </div>
-    </section>
-
-    <!-- Projects Section -->
-    <section id="projects" class="projects">
-        <div class="container">
-            <h2 class="section-title">Proyectos Destacados</h2>
-            <div class="projects-grid">
-                <div class="project-card">
-                    <div class="project-icon">🚀</div>
-                    <h3>Proyecto Innovador</h3>
-                    <p>Una aplicación web revolucionaria que cambió la forma en que los usuarios interactúan con datos en tiempo real.</p>
-                    <div class="project-tags">
-                        <span class="tag">React</span>
-                        <span class="tag">Node.js</span>
-                    </div>
-                </div>
-                <div class="project-card">
-                    <div class="project-icon">🎨</div>
-                    <h3>Diseño Creativo</h3>
-                    <p>Plataforma de e-commerce con interfaz intuitiva y experiencia de usuario excepcional.</p>
-                    <div class="project-tags">
-                        <span class="tag">Vue</span>
-                        <span class="tag">Firebase</span>
-                    </div>
-                </div>
-                <div class="project-card">
-                    <div class="project-icon">⚡</div>
-                    <h3>Solución Rápida</h3>
-                    <p>Dashboard de análisis con visualizaciones interactivas y actualizaciones en tiempo real.</p>
-                    <div class="project-tags">
-                        <span class="tag">JavaScript</span>
-                        <span class="tag">D3.js</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Contact Section -->
-    <section id="contact" class="contact">
-        <div class="container">
-            <h2 class="section-title">Ponte en Contacto</h2>
-            <div class="contact-content">
-                <p>¿Tienes un proyecto en mente? Me encantaría saber de ti.</p>
-                <div class="contact-links">
-                    <a href="mailto:tu@email.com" class="contact-btn">Enviar Email</a>
-                    <a href="https://github.com" target="_blank" class="contact-btn secondary">GitHub</a>
-                    <a href="https://linkedin.com" target="_blank" class="contact-btn secondary">LinkedIn</a>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <p>&copy; 2026 Mi Portafolio. Hecho con ❤️ y pasión.</p>
-        </div>
-    </footer>
-
-    <script src="js/script.js"></script>
+/* Renderizado Canvas. */
+function draw(){
+ const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,"#274987");g.addColorStop(.55,"#15295d");g.addColorStop(1,"#09142d");ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+ ctx.globalAlpha=.2;ctx.fillStyle="#cde4ff";for(let i=0;i<26;i++){const x=(i*79)%W,y=((i*137)%Math.max(H,1));ctx.beginPath();ctx.arc(x,y,1+(i%3)*.45,0,Math.PI*2);ctx.fill();}ctx.globalAlpha=1;
+ for(const p of platforms){const sy=p.y-cameraY;if(sy<-30||sy>H+30)continue;ctx.save();ctx.translate(p.x,sy);const x=-p.w/2;ctx.shadowBlur=12;ctx.shadowColor=p.mobile?"#fbce63a0":"#35e2c47a";ctx.fillStyle=p.mobile?"#f6b94d":"#39d4b3";roundRect(ctx,x,0,p.w,p.h,6);ctx.fill();ctx.shadowBlur=0;ctx.fillStyle=p.mobile?"#fff0a6":"#b9fff1";ctx.fillRect(x+7,3,p.w-14,2);if(p.mobile){ctx.fillStyle="#754d06";ctx.fillRect(-10,7,20,2);}ctx.restore();}
+ for(const q of particles){ctx.globalAlpha=Math.max(0,q.life*2);ctx.fillStyle="#d6ffff";ctx.fillRect(q.x-2,q.y-cameraY-2,4,4);}ctx.globalAlpha=1;
+ const by=ball.y-cameraY;ctx.save();ctx.translate(ball.x,by);const s=ball.squash;ctx.scale(1+s*.14,1-s*.12);ctx.shadowBlur=20;ctx.shadowColor="#8df8ff";const bg=ctx.createRadialGradient(-5,-7,2,0,0,ball.r*1.2);bg.addColorStop(0,"#fff");bg.addColorStop(.28,"#aaf8ff");bg.addColorStop(1,"#3887ff");ctx.fillStyle=bg;ctx.beginPath();ctx.arc(0,0,ball.r,0,Math.PI*2);ctx.fill();ctx.fillStyle="#163a83";ctx.globalAlpha=.6;ctx.beginPath();ctx.arc(5,5,3,0,Math.PI*2);ctx.fill();ctx.restore();
+}
+function roundRect(c,x,y,w,h,r){c.beginPath();c.roundRect(x,y,w,h,r);c.closePath();}
+function loop(t){const dt=Math.min(.035,Math.max(0,(t-last)/1000||0));last=t;update(dt);draw();raf=requestAnimationFrame(loop);}
+ui.retry.addEventListener("click",e=>{e.stopPropagation();resetWorld();});
+ui.clear.addEventListener("click",e=>{e.stopPropagation();if(!confirm("¿Borrar intentos, récord y clasificación local?"))return;data={attempts:0,best:0,scores:[]};try{localStorage.removeItem(C.leaderboardKey)}catch(err){}ui.record.textContent="0";ui.finalRecord.textContent="0";ui.attempts.textContent="0";renderScores();});
+resize();resetWorld();last=performance.now();raf=requestAnimationFrame(loop);
+</script>
+</main>
 </body>
 </html>
